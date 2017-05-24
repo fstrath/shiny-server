@@ -1,0 +1,220 @@
+---
+title: "A1_FGS"
+author: "Frederick Strathmann"
+date: "5/22/2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Code chunk #1: Setup, data import and inspection of the data
+
+```{r dataLoad}
+## 1.A. load needed libraries
+library(psych)
+library(rmarkdown)
+library(scatterplot3d)
+
+## set directories and constants
+dir <- '~/R/IS_6482/A1'
+fileName <- 'bank_full.csv'
+
+## import data
+dat <- read.csv(gettextf('%s/%s', dir, fileName), colClasses = 'character', stringsAsFactors = FALSE)
+
+## 1.B. Overall structure
+str(dat)
+
+## summary showing the mean and the five-number statistics indicating the spread of each column's values - all characters initially
+summary(dat)
+ 
+## 1.C. convert strings to factors
+colStrings <- colnames(dat)[sapply(dat[1,], function(x){grepl('[a-zA-z]', x)})]
+dat[,colStrings] <- lapply(dat[,colStrings], as.factor)
+
+## overall structure - after factoring
+str(dat)
+
+## summary showing the mean and the five-number statistics indicating the spread of each column's values - after factoring
+summary(dat)
+
+## 1.D. Retrieve, save and show number of rows and columns
+rows <- nrow(dat)
+cols <- ncol(dat)
+cat(gettextf('Number of rows in data: %.0f', rows))
+cat(gettextf('Number of columns in data: %.0f', cols))
+
+## 1.E. Show head and tail
+## first 10 instances
+head(dat, n=10)
+
+## last 10 instances
+tail(dat, n=10)
+```
+
+Code Chunk #2: Exploration of variables of numeric data type
+
+```{r numeric}
+## 2.A. Histogram and Boxplot for each numeric variable
+## generate numeric data first
+colNumeric <- colnames(dat)[sapply(dat[1,], function(x){!grepl('[a-zA-z]', x)})]
+dat[,colNumeric] <- lapply(dat[,colNumeric], as.numeric)
+
+## histogram and boxplot for Age
+par(mfrow = c(1,2))
+with(dat, hist(age, main = 'Distribution of Age', xlab = 'Age in Years', ylab = 'Frequency'))
+with(dat, boxplot(age, main = 'Distribtion of Age', xlab = 'Age'))
+
+## histogram and boxplot for Duration
+par(mfrow = c(1,2))
+with(dat, hist(duration, main = 'Distribution of Duration', xlab = 'Duration in Days', ylab = 'Frequency'))
+with(dat, boxplot(duration, main = 'Distribtion of Duration', xlab = 'Duration'))
+
+## histogram and boxplot for Campaign
+par(mfrow = c(1,2))
+with(dat, hist(campaign, main = 'Distribution of Campaign', xlab = 'Campaign', ylab = 'Frequency'))
+with(dat, boxplot(campaign, main = 'Distribtion of Campaign', xlab = 'Campaign'))
+
+## histogram and boxplot for Pdays
+par(mfrow = c(1,2))
+with(dat, hist(pdays, main = 'Distribution of Pdays', xlab = 'Pdays', ylab = 'Frequency'))
+with(dat, boxplot(pdays, main = 'Distribtion of Pdays', xlab = 'Pdays'))
+
+## 2.B.i. Non normalized summary statistics (mean, variance, sd, quantiles, deciles) for duration, campaign and pdays
+## put evertying into a dataframe for ease
+
+## initial stats - quantiles
+quantDur <- as.data.frame(quantile(dat$duration), optional = TRUE)
+quantCamp <- as.data.frame(quantile(dat$campaign), optional = TRUE)
+quantpdays <- as.data.frame(quantile(dat$pdays), optional = TRUE)
+
+## initial stats - deciles
+decDur <- as.data.frame(quantile(dat$duration, seq(from = 0, to = 1, by = 0.10)), optional = TRUE)
+decCamp <- as.data.frame(quantile(dat$campaign, seq(from = 0, to = 1, by = 0.10)), optional = TRUE) 
+decpdays <- as.data.frame(quantile(dat$pdays, seq(from = 0, to = 1, by = 0.10)), optional = TRUE)
+
+## summary table - non normalized!!
+sumStats <- with(dat, data.frame('Parameter' = c('Duration', 'Campaign', 'Pdays'),
+                       'Mean' = c(mean(duration), mean(campaign), mean(pdays)),
+                       'Variance' = c(var(duration), var(campaign), var(pdays)),
+                       'Standard.Deviation' = c(sd(duration), sd(campaign), sd(pdays))
+))
+
+sumStatsQuant <- with(dat, data.frame('Quartile' = rownames(quantDur),
+                                      'Raw.duration' = quantDur[,1],
+                                      'Raw.campaign' = quantCamp[,1],
+                                      'Raw.pdays' = quantpdays[,1]
+))
+
+sumStatsDec <- with(dat, data.frame('Decile' = rownames(decDur),
+                                    'Raw.duration' = decDur[,1],
+                                    'Raw.campaign' = decCamp[,1],
+                                    'Raw.pdays' = decpdays[,1]
+))
+
+cat('Summary stats for NON NORMALIZED data')
+sumStats
+
+cat('Non-Normalized Quantiles')
+sumStatsQuant
+
+cat('Non-Normalized Deciles')
+sumStatsDec
+
+## 2.B.ii. Non normalized summary statistics (mean, variance, sd, quantiles, deciles) for duration, campaign and pdays
+## NORMALIZE duration, campaign and pdays
+dat$durationNORM <- with(dat, (duration - min(duration))/(max(duration) - min(duration)))
+dat$campaignNORM <- with(dat, (campaign - min(campaign))/(max(campaign) - min(campaign)))
+dat$pdaysNORM <- with(dat, (pdays - min(pdays))/(max(pdays) - min(pdays)))
+
+## normalized stats - quantiles
+quantDurN <- as.data.frame(quantile(dat$durationNORM), optional = TRUE)
+quantCampN <- as.data.frame(quantile(dat$campaignNORM),optional = TRUE)
+quantpdaysN <- as.data.frame(quantile(dat$pdaysNORM), optional = TRUE)
+
+## normalized stats - deciles
+decDurN <- as.data.frame(quantile(dat$durationNORM, seq(from = 0, to = 1, by = 0.10)), optional = TRUE)
+decCampN <- as.data.frame(quantile(dat$campaignNORM, seq(from = 0, to = 1, by = 0.10)), optional = TRUE) 
+decpdaysN <- as.data.frame(quantile(dat$pdaysNORM, seq(from = 0, to = 1, by = 0.10)), optional = TRUE)
+
+## summary table - Normalized!!
+sumStatsNORM <- with(dat, data.frame('Parameter' = c('Duration', 'Campaign', 'Pdays'),
+                       'Mean' = c(mean(durationNORM), mean(campaignNORM), mean(pdaysNORM)),
+                       'Variance' = c(var(durationNORM), var(campaignNORM), var(pdaysNORM)),
+                       'Standard.Deviation' = c(sd(durationNORM), sd(campaignNORM), sd(pdaysNORM))
+))
+
+sumStatsNormQuant <- with(dat, data.frame('Quartile' = rownames(quantDurN),
+                                          'NORM.duration' = quantDurN[,1],
+                                          'NORM.campaign' = quantCampN[,1],
+                                          'NORM.pdays' = quantpdaysN[,1]
+))
+
+sumStatsNormDec <- with(dat, data.frame('Decile' = rownames(decDurN),
+                                        'NORM.duration' = decDurN[,1],
+                                        'NORM.campaign' = decCampN[,1],
+                                        'NORM.pdays' = decpdaysN[,1]
+))
+
+cat('Summary stats for NORMALIZED data')
+sumStatsNORM
+
+cat('Normalized Quantiles')
+sumStatsNormQuant
+
+cat('Normalized Deciles')
+sumStatsNormDec
+```
+Code Chunk #3: Exploration of variables of factor data type
+```{r factor}
+## 3.A Count value and % value for job, eduation, contact, poutcome
+
+## count tables
+jobTable <- with(dat, table(job))
+eduTable <- with(dat, table(education))
+contTable <- with(dat, table(contact))
+poutTable <- with(dat, table(poutcome))
+
+## proportion tables
+jobTableP <- with(dat, round(prop.table(jobTable)*100, digits = 1))
+eduTableP <- with(dat, round(prop.table(eduTable)*100), digits = 1)
+contTableP <- with(dat, round(prop.table(contTable)*100), digits = 1)
+poutTable <- with(dat, round(prop.table(poutTable)*100), digits = 1)
+
+## 3.B bar plot for Jobs and
+par(mfrow = c(1,2))
+barplot(sort(jobTable, decreasing=TRUE), main = 'Plot of Job Type Proportions', las=2)
+barplot(sort(eduTable, decreasing=TRUE), main = 'Plot of Education Level', las=2)
+
+## 3.C Retrieve and save number of levels for contact and poutcome
+contL <- nlevels(dat$contact)
+cat('Number of levels for contact: %f', contL)
+
+poutL <- nlevels(dat$poutcome)
+cat('Number of levels for poutcome: %f', poutL)
+
+```
+Code Chunk #4: Demonstration of relationships amongst multiple variables
+```{r relationships}
+## 4.A. Correlations and pairwise graphs for all numeric variables
+cat('Correlation coefficients')
+cor(dat[,colNumeric])
+
+## pairwise graphs
+pairs.panels(dat[,colNumeric])
+
+## 4.B.i Boxplot: age by deposit and campaign by housing
+par(mfrow = c(1,2))
+with(dat, boxplot(age~deposit, main = 'Deposit by Age', xlab = 'Deposit', ylab = 'Age'))
+with(dat, boxplot(campaign~housing, main = 'Housing by Campaign', xlab = 'Housing', ylab = 'Campaign'))
+
+## 4.B.ii aggregated summary
+aggregate(age~deposit, data = dat, summary)
+aggregate(campaign~housing, data = dat, summary)
+
+## 4.C 3d scatter plot
+with(dat, scatterplot3d(age, campaign, duration, pch = as.numeric(deposit), main = "3D scatter plot", sub = "Age, Campaign, Duration"))
+with(dat, legend('topright', legend = levels(deposit), cex = 0.8, pch = 1:2, title = 'Deposit'))
+```
