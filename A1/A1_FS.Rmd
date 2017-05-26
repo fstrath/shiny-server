@@ -2,7 +2,9 @@
 title: "A1_FGS"
 author: "Frederick Strathmann"
 date: "5/22/2017"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -21,7 +23,7 @@ library(scatterplot3d)
 dir <- '~/R/IS_6482/A1'
 fileName <- 'bank_full.csv'
 
-## import data
+## import data as characters first
 dat <- read.csv(gettextf('%s/%s', dir, fileName), colClasses = 'character', stringsAsFactors = FALSE)
 
 ## 1.B. Overall structure
@@ -123,11 +125,11 @@ sumStatsQuant
 cat('Non-Normalized Deciles')
 sumStatsDec
 
-## 2.B.ii. Non normalized summary statistics (mean, variance, sd, quantiles, deciles) for duration, campaign and pdays
+## 2.B.ii. Normalized summary statistics (mean, variance, sd, quantiles, deciles) for duration, campaign and pdays
 ## NORMALIZE duration, campaign and pdays
-dat$durationNORM <- with(dat, (duration - min(duration))/(max(duration) - min(duration)))
-dat$campaignNORM <- with(dat, (campaign - min(campaign))/(max(campaign) - min(campaign)))
-dat$pdaysNORM <- with(dat, (pdays - min(pdays))/(max(pdays) - min(pdays)))
+dat$durationNORM <- with(dat, round((duration - min(duration))/(max(duration) - min(duration)), digits = 1))
+dat$campaignNORM <- with(dat, round((campaign - min(campaign))/(max(campaign) - min(campaign)), digits = 1))
+dat$pdaysNORM <- with(dat, round((pdays - min(pdays))/(max(pdays) - min(pdays)), digits = 1))
 
 ## normalized stats - quantiles
 quantDurN <- as.data.frame(quantile(dat$durationNORM), optional = TRUE)
@@ -177,23 +179,43 @@ eduTable <- with(dat, table(education))
 contTable <- with(dat, table(contact))
 poutTable <- with(dat, table(poutcome))
 
+cat('Count Values')
+cat('Job Table')
+jobTable
+cat('Education Table')
+eduTable
+cat('Contact Table')
+contTable
+cat('Outcome Table')
+poutTable
+
 ## proportion tables
 jobTableP <- with(dat, round(prop.table(jobTable)*100, digits = 1))
 eduTableP <- with(dat, round(prop.table(eduTable)*100), digits = 1)
 contTableP <- with(dat, round(prop.table(contTable)*100), digits = 1)
-poutTable <- with(dat, round(prop.table(poutTable)*100), digits = 1)
+poutTableP <- with(dat, round(prop.table(poutTable)*100), digits = 1)
 
-## 3.B bar plot for Jobs and
+cat('Proportion Tables as Percent')
+cat('Job Table')
+jobTableP
+cat('Education Table')
+eduTableP
+cat('Contact Table')
+contTableP
+cat('Outcome Table')
+poutTableP
+
+## 3.B bar plot for Jobs and Education
 par(mfrow = c(1,2))
 barplot(sort(jobTable, decreasing=TRUE), main = 'Plot of Job Type Proportions', las=2)
 barplot(sort(eduTable, decreasing=TRUE), main = 'Plot of Education Level', las=2)
 
 ## 3.C Retrieve and save number of levels for contact and poutcome
 contL <- nlevels(dat$contact)
-cat('Number of levels for contact: %f', contL)
+cat('Number of levels for contact: ', contL)
 
 poutL <- nlevels(dat$poutcome)
-cat('Number of levels for poutcome: %f', poutL)
+cat('Number of levels for poutcome: ', poutL)
 
 ```
 Code Chunk #4: Demonstration of relationships amongst multiple variables
